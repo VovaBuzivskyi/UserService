@@ -179,4 +179,9 @@ public class UserController {
         return userService.getUser(userId);
     }
 
+    @PostMapping("/{userId}/deactivate")
+    public void deactivateUser(@PathVariable long userId) {
+        userService.deactivateUser(userId);
+    }
+
 }
