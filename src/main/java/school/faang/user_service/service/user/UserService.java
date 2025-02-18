@@ -16,6 +16,9 @@ import school.faang.user_service.dto.user_jira.UserJiraCreateUpdateDto;
 import school.faang.user_service.dto.user_jira.UserJiraDto;
 import school.faang.user_service.entity.Country;
 import school.faang.user_service.entity.User;
+import school.faang.user_service.entity.event.Event;
+import school.faang.user_service.entity.event.EventStatus;
+import school.faang.user_service.entity.goal.Goal;
 import school.faang.user_service.entity.userJira.UserJira;
 import school.faang.user_service.exception.EntityNotFoundException;
 import school.faang.user_service.exception.ErrorMessage;
@@ -174,6 +177,30 @@ public class UserService {
             log.error("Error processing CSV file", e);
             throw new RuntimeException("Error processing CSV file", e);
         }
+    }
+
+    @Transactional
+    public void deactivateUser(long userId) {
+        User user = findUserById(userId);
+
+        List<Goal> goals = user.getGoals();
+        goals.forEach(goal -> {
+            if (goal.getUsers().size() == 1 && goal.getUsers().contains(user)) {
+                goals.remove(goal);
+            }
+        });
+
+        List<Event> events = user.getOwnedEvents();
+        events.forEach(event -> {
+            event.setStatus(EventStatus.CANCELED);
+            events.remove(event);
+        });
+
+        user.setActive(false);
+        userRepository.save(user);
+
+
+        log.info("User with id: {} is deactivated", userId);
     }
 
     private List<UserDto> saveUsers(List<Person> persons) {
