@@ -202,4 +202,10 @@ public class UserController {
         userCacheService.startHeatFeedCache();
         return "Cache heating started successfully.";
     }
+  
+    @PostMapping("/{userId}/deactivate")
+    public String deactivateUser(@PathVariable long userId) {
+        userService.deactivateUser(userId);
+        return "User deactivated successfully";
+    }
 }

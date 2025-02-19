@@ -1,9 +1,9 @@
 package school.faang.user_service.service.mentorship;
 
-import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import school.faang.user_service.dto.mentorship.MentorshipRequestCreationDto;
 import school.faang.user_service.dto.mentorship.MentorshipRequestDto;
 import school.faang.user_service.dto.mentorship.RejectionDto;
@@ -11,14 +11,14 @@ import school.faang.user_service.dto.mentorship.RequestFilterDto;
 import school.faang.user_service.entity.MentorshipRequest;
 import school.faang.user_service.entity.RequestStatus;
 import school.faang.user_service.entity.User;
+import school.faang.user_service.entity.goal.Goal;
+import school.faang.user_service.filter.mentorship.RequestFilter;
 import school.faang.user_service.mapper.mentorship.MentorshipRequestMapper;
 import school.faang.user_service.redis.event.MentorshipAcceptedEvent;
 import school.faang.user_service.redis.event.MentorshipRequestedEvent;
 import school.faang.user_service.redis.publisher.MentorshipAcceptedEventPublisher;
 import school.faang.user_service.redis.publisher.MentorshipRequestedEventPublisher;
 import school.faang.user_service.repository.mentorship.MentorshipRequestRepository;
-import school.faang.user_service.filter.mentorship.RequestFilter;
-import school.faang.user_service.service.user.UserService;
 import school.faang.user_service.validator.mentorship.MentorshipRequestDtoValidator;
 
 import java.time.LocalDateTime;
@@ -32,12 +32,12 @@ import java.util.stream.Stream;
 public class MentorshipRequestService {
 
     private final MentorshipRequestRepository requestRepository;
-    private final UserService userService;
     private final MentorshipRequestDtoValidator requestValidator;
     private final MentorshipRequestMapper requestMapper;
     private final List<RequestFilter> requestFilters;
     private final MentorshipAcceptedEventPublisher mentorshipAcceptedEventPublisher;
     private final MentorshipRequestedEventPublisher mentorshipRequestedEventPublisher;
+    private final MentorshipRequestDtoValidator mentorshipRequestDtoValidator;
 
     @Transactional
     public MentorshipRequestDto requestMentorship(MentorshipRequestCreationDto creationRequestDto) {
@@ -100,14 +100,8 @@ public class MentorshipRequestService {
         initializeLists(mentee);
         initializeLists(mentor);
 
-        if (!mentee.getMentors().contains(mentor)) {
-            mentee.getMentors().add(mentor);
-            userService.saveUser(mentee);
-        }
-        if (!mentor.getMentees().contains(mentee)) {
-            mentor.getMentees().add(mentee);
-            userService.saveUser(mentor);
-        }
+        mentorshipRequestDtoValidator.validateMenteeHasMentorAddIfAbsents(mentee,mentor);
+        mentorshipRequestDtoValidator.validateMentorHasMenteeAddIfAbsent(mentee,mentor);
 
         request.setStatus(RequestStatus.ACCEPTED);
         MentorshipRequest savedRequest = requestRepository.save(request);
@@ -132,6 +126,23 @@ public class MentorshipRequestService {
         MentorshipRequest savedRequest = requestRepository.save(request);
         log.info("Successfully rejected request ID: {}", requestId);
         return requestMapper.toMentorshipRequestDto(savedRequest);
+    }
+
+    @Transactional
+    public void deleteMentor(User mentor) {
+        List<User> mentees = mentor.getMentees();
+        mentees.forEach(mentee -> {
+            mentee.getMentors().remove(mentor);
+
+            List<Goal> goals = mentee.getGoals();
+            goals.forEach(goal -> {
+                if (goal.getMentor().equals(mentor)) {
+                    goal.setMentor(mentee);
+                }
+            });
+            log.info("{} Goals was updated successfully", goals.size());
+        });
+        log.info("Mentor with id {}, was deleted for {} mentees", mentor.getId(), mentees.size());
     }
 
     private void initializeLists(User user) {
