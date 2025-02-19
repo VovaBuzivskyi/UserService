@@ -18,9 +18,7 @@ import school.faang.user_service.redis.event.MentorshipAcceptedEvent;
 import school.faang.user_service.redis.event.MentorshipRequestedEvent;
 import school.faang.user_service.redis.publisher.MentorshipAcceptedEventPublisher;
 import school.faang.user_service.redis.publisher.MentorshipRequestedEventPublisher;
-import school.faang.user_service.repository.goal.GoalRepository;
 import school.faang.user_service.repository.mentorship.MentorshipRequestRepository;
-import school.faang.user_service.service.user.UserService;
 import school.faang.user_service.validator.mentorship.MentorshipRequestDtoValidator;
 
 import java.time.LocalDateTime;
@@ -34,13 +32,12 @@ import java.util.stream.Stream;
 public class MentorshipRequestService {
 
     private final MentorshipRequestRepository requestRepository;
-    private final UserService userService;
     private final MentorshipRequestDtoValidator requestValidator;
     private final MentorshipRequestMapper requestMapper;
     private final List<RequestFilter> requestFilters;
     private final MentorshipAcceptedEventPublisher mentorshipAcceptedEventPublisher;
     private final MentorshipRequestedEventPublisher mentorshipRequestedEventPublisher;
-    private final GoalRepository goalRepository;
+    private final MentorshipRequestDtoValidator mentorshipRequestDtoValidator;
 
     @Transactional
     public MentorshipRequestDto requestMentorship(MentorshipRequestCreationDto creationRequestDto) {
@@ -103,14 +100,8 @@ public class MentorshipRequestService {
         initializeLists(mentee);
         initializeLists(mentor);
 
-        if (!mentee.getMentors().contains(mentor)) {
-            mentee.getMentors().add(mentor);
-            userService.saveUser(mentee);
-        }
-        if (!mentor.getMentees().contains(mentee)) {
-            mentor.getMentees().add(mentee);
-            userService.saveUser(mentor);
-        }
+        mentorshipRequestDtoValidator.validateMenteeHasMentorAddIfAbsents(mentee,mentor);
+        mentorshipRequestDtoValidator.validateMentorHasMenteeAddIfAbsent(mentee,mentor);
 
         request.setStatus(RequestStatus.ACCEPTED);
         MentorshipRequest savedRequest = requestRepository.save(request);
@@ -149,7 +140,6 @@ public class MentorshipRequestService {
                     goal.setMentor(mentee);
                 }
             });
-            goalRepository.saveAll(goals);
             log.info("{} Goals was updated successfully", goals.size());
         });
         log.info("Mentor with id {}, was deleted for {} mentees", mentor.getId(), mentees.size());

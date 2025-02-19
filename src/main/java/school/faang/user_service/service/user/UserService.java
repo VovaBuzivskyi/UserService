@@ -29,6 +29,7 @@ import school.faang.user_service.pojo.user.Person;
 import school.faang.user_service.redis.event.ProfileViewEvent;
 import school.faang.user_service.redis.publisher.ProfileViewEventPublisher;
 import school.faang.user_service.repository.UserRepository;
+import school.faang.user_service.service.mentorship.MentorshipRequestService;
 import school.faang.user_service.service.user_jira.UserJiraService;
 
 import java.io.IOException;
@@ -58,6 +59,7 @@ public class UserService {
 
     private final CountryService countryService;
     private static final String FILE_TYPE = "text/csv";
+    private final MentorshipRequestService mentorshipRequestService;
 
     @Transactional(readOnly = true)
     public UserDto getUser(long userId) {
@@ -181,11 +183,12 @@ public class UserService {
 
     @Transactional
     public void deactivateUser(long userId) {
+        int oneUser = 1;
         User user = findUserById(userId);
 
         List<Goal> goals = user.getGoals();
         goals.forEach(goal -> {
-            if (goal.getUsers().size() == 1 && goal.getUsers().contains(user)) {
+            if (goal.getUsers().size() == oneUser && goal.getUsers().contains(user)) {
                 goals.remove(goal);
             }
         });
@@ -199,8 +202,9 @@ public class UserService {
         user.setActive(false);
         userRepository.save(user);
 
+        mentorshipRequestService.deleteMentor(user);
 
-        log.info("User with id: {} is deactivated", userId);
+        log.info("User with id: {} were deactivated", userId);
     }
 
     private List<UserDto> saveUsers(List<Person> persons) {
@@ -257,5 +261,4 @@ public class UserService {
                 || user.getPremium().getEndDate() == null
                 || user.getPremium().getEndDate().isBefore(LocalDateTime.now()));
     }
-
 }
