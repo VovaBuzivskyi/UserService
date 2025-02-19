@@ -1,25 +1,28 @@
 package school.faang.user_service.validator.mentorship;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import school.faang.user_service.dto.mentorship.MentorshipRequestCreationDto;
 import school.faang.user_service.entity.MentorshipRequest;
 import school.faang.user_service.entity.RequestStatus;
+import school.faang.user_service.entity.User;
 import school.faang.user_service.exception.DataValidationException;
 import school.faang.user_service.exception.EntityNotFoundException;
+import school.faang.user_service.repository.UserRepository;
 import school.faang.user_service.repository.mentorship.MentorshipRequestRepository;
-import school.faang.user_service.service.user.UserService;
 
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.Optional;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class MentorshipRequestDtoValidator {
     public static final int MIN_REQUEST_INTERVAL = 3;
 
-    private final UserService userService;
+    private final UserRepository userRepository;
     private final MentorshipRequestRepository requestRepository;
 
     public void validateCreationRequest(MentorshipRequestCreationDto creationRequestDto) {
@@ -47,10 +50,26 @@ public class MentorshipRequestDtoValidator {
         return validateRequest(requestId);
     }
 
+    public void validateMenteeHasMentorAddIfAbsents(User mentee, User mentor) {
+        if (!mentee.getMentors().contains(mentor)) {
+            mentee.getMentors().add(mentor);
+            userRepository.save(mentee);
+            log.info("Mentor with id {} was assign to mentee with id {}.", mentor.getId(), mentee.getId());
+        }
+    }
+
+    public void validateMentorHasMenteeAddIfAbsent(User mentee, User mentor) {
+        if (!mentor.getMentees().contains(mentee)) {
+            mentor.getMentees().add(mentee);
+            userRepository.save(mentor);
+            log.info("Mentee with id {} was add to mentor with id {}.", mentee.getId(), mentor.getId());
+        }
+    }
+
     private void validateUserExistence(Long... userIds) {
         Arrays.stream(userIds)
                 .forEach(userId -> {
-                    if (!userService.existsById(userId)) {
+                    if (!userRepository.existsById(userId)) {
                         throw new EntityNotFoundException("User with ID %d does not exist in the database!".formatted(userId));
                     }
                 });

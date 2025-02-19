@@ -18,6 +18,9 @@ import school.faang.user_service.dto.user_jira.UserJiraCreateUpdateDto;
 import school.faang.user_service.dto.user_jira.UserJiraDto;
 import school.faang.user_service.entity.Country;
 import school.faang.user_service.entity.User;
+import school.faang.user_service.entity.event.Event;
+import school.faang.user_service.entity.event.EventStatus;
+import school.faang.user_service.entity.goal.Goal;
 import school.faang.user_service.entity.userJira.UserJira;
 import school.faang.user_service.exception.EntityNotFoundException;
 import school.faang.user_service.exception.ErrorMessage;
@@ -28,6 +31,7 @@ import school.faang.user_service.pojo.user.Person;
 import school.faang.user_service.redis.event.ProfileViewEvent;
 import school.faang.user_service.redis.publisher.ProfileViewEventPublisher;
 import school.faang.user_service.repository.UserRepository;
+import school.faang.user_service.service.mentorship.MentorshipRequestService;
 import school.faang.user_service.service.user_jira.UserJiraService;
 
 import java.io.IOException;
@@ -57,6 +61,7 @@ public class UserService {
 
     private final CountryService countryService;
     private static final String FILE_TYPE = "text/csv";
+    private final MentorshipRequestService mentorshipRequestService;
 
     @Transactional(readOnly = true)
     public UserDto getUser(long userId) {
@@ -200,6 +205,32 @@ public class UserService {
         }
     }
 
+    @Transactional
+    public void deactivateUser(long userId) {
+        int oneUser = 1;
+        User user = findUserById(userId);
+
+        List<Goal> goals = user.getGoals();
+        goals.forEach(goal -> {
+            if (goal.getUsers().size() == oneUser && goal.getUsers().contains(user)) {
+                goals.remove(goal);
+            }
+        });
+
+        List<Event> events = user.getOwnedEvents();
+        events.forEach(event -> {
+            event.setStatus(EventStatus.CANCELED);
+            events.remove(event);
+        });
+
+        user.setActive(false);
+        userRepository.save(user);
+
+        mentorshipRequestService.deleteMentor(user);
+
+        log.info("User with id: {} were deactivated", userId);
+    }
+
     private List<UserDto> saveUsers(List<Person> persons) {
         log.info("Starting to save {} users", persons.size());
 
@@ -254,5 +285,4 @@ public class UserService {
                 || user.getPremium().getEndDate() == null
                 || user.getPremium().getEndDate().isBefore(LocalDateTime.now()));
     }
-
 }
