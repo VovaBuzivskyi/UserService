@@ -37,7 +37,6 @@ public class MentorshipRequestService {
     private final List<RequestFilter> requestFilters;
     private final MentorshipAcceptedEventPublisher mentorshipAcceptedEventPublisher;
     private final MentorshipRequestedEventPublisher mentorshipRequestedEventPublisher;
-    private final MentorshipRequestDtoValidator mentorshipRequestDtoValidator;
 
     @Transactional
     public MentorshipRequestDto requestMentorship(MentorshipRequestCreationDto creationRequestDto) {
@@ -100,8 +99,8 @@ public class MentorshipRequestService {
         initializeLists(mentee);
         initializeLists(mentor);
 
-        mentorshipRequestDtoValidator.validateMenteeHasMentorAddIfAbsents(mentee,mentor);
-        mentorshipRequestDtoValidator.validateMentorHasMenteeAddIfAbsent(mentee,mentor);
+        requestValidator.validateMenteeHasMentorAddIfAbsents(mentee,mentor);
+        requestValidator.validateMentorHasMenteeAddIfAbsent(mentee,mentor);
 
         request.setStatus(RequestStatus.ACCEPTED);
         MentorshipRequest savedRequest = requestRepository.save(request);
