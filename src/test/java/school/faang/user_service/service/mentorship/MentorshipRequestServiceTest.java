@@ -16,19 +16,19 @@ import school.faang.user_service.dto.mentorship.RequestFilterDto;
 import school.faang.user_service.entity.MentorshipRequest;
 import school.faang.user_service.entity.RequestStatus;
 import school.faang.user_service.entity.User;
-import school.faang.user_service.mapper.mentorship.MentorshipRequestMapperImpl;
-import school.faang.user_service.redis.publisher.MentorshipAcceptedEventPublisher;
-import school.faang.user_service.redis.publisher.MentorshipRequestedEventPublisher;
-import school.faang.user_service.repository.mentorship.MentorshipRequestRepository;
 import school.faang.user_service.filter.mentorship.RequestDescriptionFilter;
 import school.faang.user_service.filter.mentorship.RequestFilter;
 import school.faang.user_service.filter.mentorship.RequestReceiverFilter;
 import school.faang.user_service.filter.mentorship.RequestRequesterFilter;
 import school.faang.user_service.filter.mentorship.RequestStatusFilter;
-import school.faang.user_service.service.user.UserService;
+import school.faang.user_service.mapper.mentorship.MentorshipRequestMapperImpl;
+import school.faang.user_service.redis.publisher.MentorshipAcceptedEventPublisher;
+import school.faang.user_service.redis.publisher.MentorshipRequestedEventPublisher;
+import school.faang.user_service.repository.mentorship.MentorshipRequestRepository;
 import school.faang.user_service.validator.mentorship.MentorshipRequestDtoValidator;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -46,9 +46,6 @@ class MentorshipRequestServiceTest {
 
     @Mock
     private MentorshipRequestRepository requestRepository;
-
-    @Mock
-    private UserService userService;
 
     @Mock
     private MentorshipRequestDtoValidator requestValidator;
@@ -93,7 +90,6 @@ class MentorshipRequestServiceTest {
 
         requestService = new MentorshipRequestService(
                 requestRepository,
-                userService,
                 requestValidator,
                 requestMapper,
                 requestFilters,
@@ -169,17 +165,17 @@ class MentorshipRequestServiceTest {
     @Test
     void acceptRequestValidTest() {
         Long requestId = 1L;
-        firstRequest.getRequester().setMentees(null);
-        firstRequest.getReceiver().setMentors(null);
+        firstRequest.getRequester().setMentees(new ArrayList<>());
+        firstRequest.getReceiver().setMentors(new ArrayList<>());
         when(requestValidator.validateAcceptRequest(requestId)).thenReturn(firstRequest);
         when(requestRepository.save(any(MentorshipRequest.class))).thenReturn(firstRequest);
         doNothing().when(mentorshipAcceptedEventPublisher).publish(any());
 
         MentorshipRequestDto resultDto = requestService.acceptRequest(requestId);
 
-        verify(userService, times(1)).saveUser(firstRequest.getRequester());
-        verify(userService, times(1)).saveUser(firstRequest.getReceiver());
         verify(requestValidator, times(1)).validateAcceptRequest(requestId);
+        verify(requestValidator).validateMenteeHasMentorAddIfAbsents(any(), any());
+        verify(requestValidator).validateMentorHasMenteeAddIfAbsent(any(), any());
         verify(mentorshipAcceptedEventPublisher, times(1)).publish(any());
         assertEquals(RequestStatus.ACCEPTED, resultDto.getStatus());
         assertEquals(firstRequest.getId(), resultDto.getId());

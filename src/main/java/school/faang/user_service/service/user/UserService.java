@@ -58,10 +58,10 @@ public class UserService {
     private final UserJiraService userJiraService;
     private final ProfileViewEventPublisher profileViewEventPublisher;
     private final UserContext userContext;
-
-    private final CountryService countryService;
-    private static final String FILE_TYPE = "text/csv";
     private final MentorshipRequestService mentorshipRequestService;
+    private final CountryService countryService;
+
+    private static final String FILE_TYPE = "text/csv";
 
     @Transactional(readOnly = true)
     public UserDto getUser(long userId) {
