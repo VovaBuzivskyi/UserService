@@ -19,6 +19,7 @@ import school.faang.user_service.redis.event.MentorshipRequestedEvent;
 import school.faang.user_service.redis.publisher.MentorshipAcceptedEventPublisher;
 import school.faang.user_service.redis.publisher.MentorshipRequestedEventPublisher;
 import school.faang.user_service.repository.mentorship.MentorshipRequestRepository;
+import school.faang.user_service.service.goal.GoalService;
 import school.faang.user_service.validator.mentorship.MentorshipRequestDtoValidator;
 
 import java.time.LocalDateTime;
@@ -37,6 +38,7 @@ public class MentorshipRequestService {
     private final List<RequestFilter> requestFilters;
     private final MentorshipAcceptedEventPublisher mentorshipAcceptedEventPublisher;
     private final MentorshipRequestedEventPublisher mentorshipRequestedEventPublisher;
+    private final GoalService goalService;
 
     @Transactional
     public MentorshipRequestDto requestMentorship(MentorshipRequestCreationDto creationRequestDto) {
@@ -99,8 +101,8 @@ public class MentorshipRequestService {
         initializeLists(mentee);
         initializeLists(mentor);
 
-        requestValidator.validateMenteeHasMentorAddIfAbsents(mentee,mentor);
-        requestValidator.validateMentorHasMenteeAddIfAbsent(mentee,mentor);
+        requestValidator.validateMenteeHasMentorAddIfAbsents(mentee, mentor);
+        requestValidator.validateMentorHasMenteeAddIfAbsent(mentee, mentor);
 
         request.setStatus(RequestStatus.ACCEPTED);
         MentorshipRequest savedRequest = requestRepository.save(request);
@@ -136,10 +138,9 @@ public class MentorshipRequestService {
             List<Goal> goals = mentee.getGoals();
             goals.forEach(goal -> {
                 if (goal.getMentor().equals(mentor)) {
-                    goal.setMentor(mentee);
+                    goalService.changeMentor(goal, mentee);
                 }
             });
-            log.info("{} Goals was updated successfully", goals.size());
         });
         log.info("Mentor with id {}, was deleted for {} mentees", mentor.getId(), mentees.size());
     }

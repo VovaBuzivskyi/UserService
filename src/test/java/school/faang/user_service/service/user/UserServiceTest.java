@@ -35,6 +35,8 @@ import school.faang.user_service.mapper.user.UserMapperImpl;
 import school.faang.user_service.mapper.user_jira.UserJiraMapper;
 import school.faang.user_service.redis.publisher.ProfileViewEventPublisher;
 import school.faang.user_service.repository.UserRepository;
+import school.faang.user_service.service.event.EventService;
+import school.faang.user_service.service.goal.GoalService;
 import school.faang.user_service.service.mentorship.MentorshipRequestService;
 import school.faang.user_service.service.user_jira.UserJiraService;
 
@@ -89,6 +91,12 @@ class UserServiceTest {
     private UserContext userContext;
 
     @Mock
+    GoalService goalService;
+
+    @Mock
+    EventService eventService;
+
+    @Mock
     private MentorshipRequestService mentorshipRequestService;
 
     private List<UserFilter> userFilters;
@@ -127,7 +135,10 @@ class UserServiceTest {
                 profileViewEventPublisher,
                 userContext,
                 mentorshipRequestService,
-                countryService);
+                countryService,
+                eventService,
+                goalService
+                );
     }
 
     @Test

@@ -25,6 +25,7 @@ import school.faang.user_service.mapper.mentorship.MentorshipRequestMapperImpl;
 import school.faang.user_service.redis.publisher.MentorshipAcceptedEventPublisher;
 import school.faang.user_service.redis.publisher.MentorshipRequestedEventPublisher;
 import school.faang.user_service.repository.mentorship.MentorshipRequestRepository;
+import school.faang.user_service.service.goal.GoalService;
 import school.faang.user_service.validator.mentorship.MentorshipRequestDtoValidator;
 
 import java.time.LocalDateTime;
@@ -58,6 +59,9 @@ class MentorshipRequestServiceTest {
 
     @Mock
     MentorshipRequestedEventPublisher mentorshipRequestedEventPublisher;
+
+    @Mock
+    GoalService goalService;
 
     @Captor
     ArgumentCaptor<MentorshipRequest> requestCaptor;
@@ -94,7 +98,8 @@ class MentorshipRequestServiceTest {
                 requestMapper,
                 requestFilters,
                 mentorshipAcceptedEventPublisher,
-                mentorshipRequestedEventPublisher
+                mentorshipRequestedEventPublisher,
+                goalService
         );
 
         Long requesterId = 1L;

@@ -65,6 +65,14 @@ public class GoalService {
 
     public void deleteGoal(Long goalId) {
         goalRepository.deleteById(goalId);
+        log.info("Goal with id: {} was deleted", goalId);
+    }
+
+    public void deleteGoalForUserIfNoOneHave(Goal goal, User goalOwner) {
+        int oneUser = 1;
+        if (goal.getUsers().size() == oneUser && goal.getUsers().contains(goalOwner)){
+            deleteGoal(goal.getId());
+        }
     }
 
     public List<GoalDto> getGoalsByUserId(Long userId, GoalFilterDto filter) {
@@ -97,8 +105,14 @@ public class GoalService {
         );
     }
 
+    public void changeMentor(Goal goal, User newMentor) {
+        goal.setMentor(newMentor);
+        goalRepository.save(goal);
+        log.info("Changed mentor of goal with id: {}", goal.getId());
+    }
+
     private Stream<Goal> filterGoals(Stream<Goal> goals, GoalFilterDto filters) {
-         return goalFilters.stream()
+        return goalFilters.stream()
                 .filter(goalFilter -> goalFilter.isApplicable(filters))
                 .reduce(
                         goals,
