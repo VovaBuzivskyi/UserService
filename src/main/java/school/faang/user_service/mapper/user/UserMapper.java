@@ -40,6 +40,12 @@ public interface UserMapper {
                 .toList();
     }
 
+    default List<UserDto> toDtoList(List<User> users) {
+        return users.stream()
+                .map(this::toDto)
+                .toList();
+    }
+
     default String getAboutMe(Person person) {
         StringBuilder aboutMe = new StringBuilder();
 
