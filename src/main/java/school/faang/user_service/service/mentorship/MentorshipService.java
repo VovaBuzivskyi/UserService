@@ -26,4 +26,25 @@ public class MentorshipService {
         log.info("Mentors found: {}, for mentee with id: {}", mentors, menteeId);
         return userMapper.toDtoList(mentors);
     }
+
+    public List<UserDto> getMentees(long mentorId) {
+        userValidator.validateUserExistence(mentorId);
+        List<User> mentees = mentorshipRepository.findMenteesByMentorId(mentorId);
+        log.info("Mentees found: {}, for mentor with id: {}", mentees, mentorId);
+        return userMapper.toDtoList(mentees);
+    }
+
+    public void deleteMentor(long menteeId, long mentorId) {
+        userValidator.validateUserExistence(menteeId);
+        userValidator.validateUserExistence(mentorId);
+        mentorshipRepository.deleteMentor(menteeId, mentorId);
+        log.info("Mentor with id:{} deleted, for mentee with id: {} ", mentorId, menteeId);
+    }
+
+    public void deleteMentee(long menteeId, long mentorId) {
+        userValidator.validateUserExistence(menteeId);
+        userValidator.validateUserExistence(mentorId);
+        mentorshipRepository.deleteMentee(mentorId, menteeId);
+        log.info("Mentee with id:{} deleted, for mentor with id: {} ", mentorId, menteeId);
+    }
 }
