@@ -23,14 +23,14 @@ public class MentorshipService {
     public List<UserDto> getMentors(long menteeId) {
         userValidator.validateUserExistence(menteeId);
         List<User> mentors = mentorshipRepository.findMentorsByMenteeId(menteeId);
-        log.info("Mentors found: {}, for mentee with id: {}", mentors, menteeId);
+        log.info("Mentors found: {}, for mentee with id: {}", mentors.size(), menteeId);
         return userMapper.toDtoList(mentors);
     }
 
     public List<UserDto> getMentees(long mentorId) {
         userValidator.validateUserExistence(mentorId);
         List<User> mentees = mentorshipRepository.findMenteesByMentorId(mentorId);
-        log.info("Mentees found: {}, for mentor with id: {}", mentees, mentorId);
+        log.info("Mentees found: {}, for mentor with id: {}", mentees.size(), mentorId);
         return userMapper.toDtoList(mentees);
     }
 
@@ -41,7 +41,7 @@ public class MentorshipService {
         log.info("Mentor with id:{} deleted, for mentee with id: {} ", mentorId, menteeId);
     }
 
-    public void deleteMentee(long menteeId, long mentorId) {
+    public void deleteMentee(long mentorId, long menteeId) {
         userValidator.validateUserExistence(menteeId);
         userValidator.validateUserExistence(mentorId);
         mentorshipRepository.deleteMentee(mentorId, menteeId);
