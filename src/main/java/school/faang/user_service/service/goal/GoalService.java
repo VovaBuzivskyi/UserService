@@ -70,7 +70,7 @@ public class GoalService {
 
     public void deleteGoalForUserIfNoOneHave(Goal goal, User goalOwner) {
         int oneUser = 1;
-        if (goal.getUsers().size() == oneUser && goal.getUsers().contains(goalOwner)){
+        if (goal.getUsers().size() == oneUser && goal.getUsers().contains(goalOwner)) {
             deleteGoal(goal.getId());
         }
     }
@@ -87,6 +87,13 @@ public class GoalService {
         List<Goal> filteredGoals = filterGoals(subtasks, filters).toList();
 
         return goalMapper.entityListToDtoList(filteredGoals);
+    }
+
+    public Goal getGoalById(long goalId) {
+        Goal goal = goalRepository.findById(goalId)
+                .orElseThrow(() -> new EntityNotFoundException("Goal with id: " + goalId + " not found"));
+        log.info("Goal with id: {} was got from repository", goalId);
+        return goal;
     }
 
     private Goal getGoalById(Long goalId) {
