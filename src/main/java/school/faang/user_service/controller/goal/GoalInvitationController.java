@@ -1,6 +1,7 @@
 package school.faang.user_service.controller.goal;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -33,11 +34,13 @@ public class GoalInvitationController {
         goalInvitationService.acceptGoalInvitation(goalInvitationId, invitedId);
     }
 
-    @PatchMapping("/{goalInvitationId}")
+    @PatchMapping("/reject/{goalInvitationId}")
     public void rejectGaolInvitation(@PathVariable Long goalInvitationId) {
-        goalInvitationService.rejectGoalInvitaion(goalInvitationId);
+        long invitedId = userContext.getUserId();
+        goalInvitationService.rejectGoalInvitation(goalInvitationId, invitedId);
     }
 
+    @GetMapping
     public List<GoalInvitationDto> getAllGaolInvitation(@RequestParam Long invitedUserId) {
         return goalInvitationService.getAllGaolInvitation(invitedUserId);
     }

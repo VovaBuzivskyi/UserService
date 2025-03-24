@@ -45,13 +45,11 @@ public class GoalInvitationService {
     }
 
     public void acceptGoalInvitation(long goalInvitationId, long invitedId) {
-        userValidator.validateUserExistence(invitedId);
-        GoalInvitation invitation = getGoalInvitationById(goalInvitationId);
-        goalInvitationValidator.isUserInvitedToGoal(invitation, invitedId);
+        proceedGoalInvitation(goalInvitationId, invitedId, RequestStatus.ACCEPTED, "accepted");
+    }
 
-        invitation.setStatus(RequestStatus.ACCEPTED);
-        goalInvitationRepository.save(invitation);
-        log.info("Invitation with id: {} was accepted successfully", goalInvitationId);
+    public void rejectGoalInvitation(long goalInvitationId, long invitedId){
+        proceedGoalInvitation(goalInvitationId, invitedId, RequestStatus.REJECTED, "rejected");
     }
 
     public GoalInvitation getGoalInvitationById(long invitationId) {
@@ -60,5 +58,15 @@ public class GoalInvitationService {
                         formatted(invitationId)));
         log.info("Goal invitation with id {} was got from repository", invitation);
         return invitation;
+    }
+
+    private void proceedGoalInvitation(long goalInvitationId, long invitedId ,
+                                       RequestStatus status, String logMessage){
+        userValidator.validateUserExistence(invitedId);
+        GoalInvitation invitation = getGoalInvitationById(goalInvitationId);
+        goalInvitationValidator.isUserInvitedToGoal(invitation, invitedId);
+        invitation.setStatus(status);
+        goalInvitationRepository.save(invitation);
+        log.info("Invitation with id: {} was {} successfully", goalInvitationId, logMessage);
     }
 }
