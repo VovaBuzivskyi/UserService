@@ -1,5 +1,6 @@
 package school.faang.user_service.service.goal;
 
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -9,6 +10,7 @@ import school.faang.user_service.entity.goal.GoalInvitation;
 import school.faang.user_service.mapper.goal.GoalInvitationMapper;
 import school.faang.user_service.repository.goal.GoalInvitationRepository;
 import school.faang.user_service.service.user.UserService;
+import school.faang.user_service.validator.goal.GoalInvitationValidator;
 import school.faang.user_service.validator.goal.GoalValidator;
 import school.faang.user_service.validator.user.UserValidator;
 
@@ -19,6 +21,7 @@ public class GoalInvitationService {
 
     private final GoalInvitationRepository goalInvitationRepository;
     private final GoalInvitationMapper goalInvitationMapper;
+    private final GoalInvitationValidator goalInvitationValidator;
     private final UserService userService;
     private final GoalService goalService;
     private final UserValidator userValidator;
@@ -39,5 +42,23 @@ public class GoalInvitationService {
 
         //add notification
         log.info("Goal invitation with id: {} sent successfully", savedInvitation.getId());
+    }
+
+    public void acceptGoalInvitation(long goalInvitationId, long invitedId) {
+        userValidator.validateUserExistence(invitedId);
+        GoalInvitation invitation = getGoalInvitationById(goalInvitationId);
+        goalInvitationValidator.isUserInvitedToGoal(invitation, invitedId);
+
+        invitation.setStatus(RequestStatus.ACCEPTED);
+        goalInvitationRepository.save(invitation);
+        log.info("Invitation with id: {} was accepted successfully", goalInvitationId);
+    }
+
+    public GoalInvitation getGoalInvitationById(long invitationId) {
+        GoalInvitation invitation = goalInvitationRepository.findById(invitationId)
+                .orElseThrow(() -> new EntityNotFoundException("Goal invitation with id: %d not found".
+                        formatted(invitationId)));
+        log.info("Goal invitation with id {} was got from repository", invitation);
+        return invitation;
     }
 }
