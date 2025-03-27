@@ -3,16 +3,21 @@ package school.faang.user_service.service.goal;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import school.faang.user_service.dto.goal.GoalInvitationDto;
+import school.faang.user_service.dto.goal.GoalInvitationFilterDto;
 import school.faang.user_service.entity.RequestStatus;
 import school.faang.user_service.entity.goal.GoalInvitation;
+import school.faang.user_service.filter.goal_invitation.GoalInvitationSpecificationFactory;
 import school.faang.user_service.mapper.goal.GoalInvitationMapper;
 import school.faang.user_service.repository.goal.GoalInvitationRepository;
 import school.faang.user_service.service.user.UserService;
 import school.faang.user_service.validator.goal.GoalInvitationValidator;
 import school.faang.user_service.validator.goal.GoalValidator;
 import school.faang.user_service.validator.user.UserValidator;
+
+import java.util.List;
 
 @Slf4j
 @Service
@@ -26,6 +31,7 @@ public class GoalInvitationService {
     private final GoalService goalService;
     private final UserValidator userValidator;
     private final GoalValidator goalValidator;
+    private final GoalInvitationSpecificationFactory specificationFactory;
 
     public void sendGoalInvitation(final GoalInvitationDto goalInvitationDto) {
         userValidator.validateUserExistence(goalInvitationDto.getInviterId());
@@ -48,8 +54,15 @@ public class GoalInvitationService {
         proceedGoalInvitation(goalInvitationId, invitedId, RequestStatus.ACCEPTED, "accepted");
     }
 
-    public void rejectGoalInvitation(long goalInvitationId, long invitedId){
+    public void rejectGoalInvitation(long goalInvitationId, long invitedId) {
         proceedGoalInvitation(goalInvitationId, invitedId, RequestStatus.REJECTED, "rejected");
+    }
+
+    public List<GoalInvitationDto> getAllGaolInvitation(GoalInvitationFilterDto filters) {
+        Specification<GoalInvitation> spec = specificationFactory.buildSpecification(filters);
+        List<GoalInvitation> goalInvitations = goalInvitationRepository.findAll(spec);
+        log.info("{} was got goal invitations by filters: {}", goalInvitations.size(), filters.toString());
+        return goalInvitationMapper.toDtoList(goalInvitations);
     }
 
     public GoalInvitation getGoalInvitationById(long invitationId) {
@@ -60,8 +73,8 @@ public class GoalInvitationService {
         return invitation;
     }
 
-    private void proceedGoalInvitation(long goalInvitationId, long invitedId ,
-                                       RequestStatus status, String logMessage){
+    private void proceedGoalInvitation(long goalInvitationId, long invitedId,
+                                       RequestStatus status, String logMessage) {
         userValidator.validateUserExistence(invitedId);
         GoalInvitation invitation = getGoalInvitationById(goalInvitationId);
         goalInvitationValidator.isUserInvitedToGoal(invitation, invitedId);
