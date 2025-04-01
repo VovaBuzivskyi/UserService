@@ -33,7 +33,7 @@ public class GoalInvitationService {
     private final GoalValidator goalValidator;
     private final GoalInvitationSpecificationFactory specificationFactory;
 
-    public void sendGoalInvitation(final GoalInvitationDto goalInvitationDto) {
+    public void sendGoalInvitation(GoalInvitationDto goalInvitationDto) {
         userValidator.validateUserExistence(goalInvitationDto.getInviterId());
         userValidator.validateUserExistence(goalInvitationDto.getInvitedId());
         goalValidator.validateGoalExistence(goalInvitationDto.getGoalId());
@@ -45,7 +45,6 @@ public class GoalInvitationService {
         invitation.setStatus(RequestStatus.PENDING);
 
         GoalInvitation savedInvitation = goalInvitationRepository.save(invitation);
-
         //add notification
         log.info("Goal invitation with id: {} sent successfully", savedInvitation.getId());
     }
@@ -61,7 +60,7 @@ public class GoalInvitationService {
     public List<GoalInvitationDto> getAllGaolInvitation(GoalInvitationFilterDto filters) {
         Specification<GoalInvitation> spec = specificationFactory.buildSpecification(filters);
         List<GoalInvitation> goalInvitations = goalInvitationRepository.findAll(spec);
-        log.info("{} was got goal invitations by filters: {}", goalInvitations.size(), filters.toString());
+        log.info("{} goal invitations was got by filters: {}", goalInvitations.size(), filters.toString());
         return goalInvitationMapper.toDtoList(goalInvitations);
     }
 
@@ -69,7 +68,7 @@ public class GoalInvitationService {
         GoalInvitation invitation = goalInvitationRepository.findById(invitationId)
                 .orElseThrow(() -> new EntityNotFoundException("Goal invitation with id: %d not found".
                         formatted(invitationId)));
-        log.info("Goal invitation with id {} was got from repository", invitation);
+        log.info("Goal invitation with id {} was got from repository", invitation.getId());
         return invitation;
     }
 
